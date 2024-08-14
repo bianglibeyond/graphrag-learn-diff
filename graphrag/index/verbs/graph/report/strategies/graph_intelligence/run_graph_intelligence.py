@@ -82,7 +82,7 @@ async def _run_extractor(
             rank_explanation=report.get("rating_explanation", ""),
             summary=report.get("summary", ""),
             findings=report.get("findings", []),
-            full_content_json=json.dumps(report, indent=4, ensure_ascii=False),
+            full_content_json=json.dumps(report, indent=4),
         )
     except Exception as e:
         log.exception("Error processing community: %s", community)

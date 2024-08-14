@@ -10,7 +10,6 @@ from typing import Any
 import numpy as np
 from datashaper import ProgressTicker, VerbCallbacks, progress_ticker
 
-import graphrag.config.defaults as defs
 from graphrag.index.cache import PipelineCache
 from graphrag.index.llm import load_llm_embeddings
 from graphrag.index.text_splitting import TokenTextSplitter
@@ -69,7 +68,7 @@ def _get_splitter(
     config: OpenAIConfiguration, batch_max_tokens: int
 ) -> TokenTextSplitter:
     return TokenTextSplitter(
-        encoding_name=config.encoding_model or defs.ENCODING_MODEL,
+        encoding_name=config.encoding_model or "cl100k_base",
         chunk_size=batch_max_tokens,
     )
 

@@ -114,7 +114,6 @@ def create_graphrag_config(
                 max_tokens=reader.int(Fragment.max_tokens) or base.max_tokens,
                 temperature=reader.float(Fragment.temperature) or base.temperature,
                 top_p=reader.float(Fragment.top_p) or base.top_p,
-                n=reader.int(Fragment.n) or base.n,
                 model_supports_json=reader.bool(Fragment.model_supports_json)
                 or base.model_supports_json,
                 request_timeout=reader.float(Fragment.request_timeout)
@@ -137,27 +136,13 @@ def create_graphrag_config(
         config: LLMConfigInput, base: LLMParameters
     ) -> LLMParameters:
         with reader.use(config.get("llm")):
-            api_type = reader.str(Fragment.type) or defs.EMBEDDING_TYPE
-            api_type = LLMType(api_type) if api_type else defs.LLM_TYPE
             api_key = reader.str(Fragment.api_key) or base.api_key
-
-            # In a unique events where:
-            # - same api_bases for LLM and embeddings (both Azure)
-            # - different api_bases for LLM and embeddings (both Azure)
-            # - LLM uses Azure OpenAI, while embeddings uses base OpenAI (this one is important)
-            # - LLM uses Azure OpenAI, while embeddings uses third-party OpenAI-like API
-            api_base = (
-                reader.str(Fragment.api_base) or base.api_base
-                if _is_azure(api_type)
-                else reader.str(Fragment.api_base)
-            )
-            api_version = (
-                reader.str(Fragment.api_version) or base.api_version
-                if _is_azure(api_type)
-                else reader.str(Fragment.api_version)
-            )
+            api_base = reader.str(Fragment.api_base) or base.api_base
+            api_version = reader.str(Fragment.api_version) or base.api_version
             api_organization = reader.str("organization") or base.organization
             api_proxy = reader.str("proxy") or base.proxy
+            api_type = reader.str(Fragment.type) or defs.EMBEDDING_TYPE
+            api_type = LLMType(api_type) if api_type else defs.LLM_TYPE
             cognitive_services_endpoint = (
                 reader.str(Fragment.cognitive_services_endpoint)
                 or base.cognitive_services_endpoint
@@ -266,7 +251,6 @@ def create_graphrag_config(
                     temperature=reader.float(Fragment.temperature)
                     or defs.LLM_TEMPERATURE,
                     top_p=reader.float(Fragment.top_p) or defs.LLM_TOP_P,
-                    n=reader.int(Fragment.n) or defs.LLM_N,
                     model_supports_json=reader.bool(Fragment.model_supports_json),
                     request_timeout=reader.float(Fragment.request_timeout)
                     or defs.LLM_REQUEST_TIMEOUT,
@@ -382,15 +366,11 @@ def create_graphrag_config(
                 base_dir=reader.str(Fragment.base_dir) or defs.STORAGE_BASE_DIR,
             )
         with reader.envvar_prefix(Section.chunk), reader.use(values.get("chunks")):
-            group_by_columns = reader.list("group_by_columns", "BY_COLUMNS")
-            if group_by_columns is None:
-                group_by_columns = defs.CHUNK_GROUP_BY_COLUMNS
-
             chunks_model = ChunkingConfig(
                 size=reader.int("size") or defs.CHUNK_SIZE,
                 overlap=reader.int("overlap") or defs.CHUNK_OVERLAP,
-                group_by_columns=group_by_columns,
-                encoding_model=reader.str(Fragment.encoding_model),
+                group_by_columns=reader.list("group_by_columns", "BY_COLUMNS")
+                or defs.CHUNK_GROUP_BY_COLUMNS,
             )
         with (
             reader.envvar_prefix(Section.snapshot),
@@ -412,13 +392,6 @@ def create_graphrag_config(
             reader.envvar_prefix(Section.entity_extraction),
             reader.use(entity_extraction_config),
         ):
-            max_gleanings = reader.int(Fragment.max_gleanings)
-            max_gleanings = (
-                max_gleanings
-                if max_gleanings is not None
-                else defs.ENTITY_EXTRACTION_MAX_GLEANINGS
-            )
-
             entity_extraction_model = EntityExtractionConfig(
                 llm=hydrate_llm_params(entity_extraction_config, llm_model),
                 parallelization=hydrate_parallelization_params(
@@ -427,9 +400,9 @@ def create_graphrag_config(
                 async_mode=hydrate_async_type(entity_extraction_config, async_mode),
                 entity_types=reader.list("entity_types")
                 or defs.ENTITY_EXTRACTION_ENTITY_TYPES,
-                max_gleanings=max_gleanings,
+                max_gleanings=reader.int(Fragment.max_gleanings)
+                or defs.ENTITY_EXTRACTION_MAX_GLEANINGS,
                 prompt=reader.str("prompt", Fragment.prompt_file),
-                encoding_model=reader.str(Fragment.encoding_model),
             )
 
         claim_extraction_config = values.get("claim_extraction") or {}
@@ -437,10 +410,6 @@ def create_graphrag_config(
             reader.envvar_prefix(Section.claim_extraction),
             reader.use(claim_extraction_config),
         ):
-            max_gleanings = reader.int(Fragment.max_gleanings)
-            max_gleanings = (
-                max_gleanings if max_gleanings is not None else defs.CLAIM_MAX_GLEANINGS
-            )
             claim_extraction_model = ClaimExtractionConfig(
                 enabled=reader.bool(Fragment.enabled) or defs.CLAIM_EXTRACTION_ENABLED,
                 llm=hydrate_llm_params(claim_extraction_config, llm_model),
@@ -450,13 +419,13 @@ def create_graphrag_config(
                 async_mode=hydrate_async_type(claim_extraction_config, async_mode),
                 description=reader.str("description") or defs.CLAIM_DESCRIPTION,
                 prompt=reader.str("prompt", Fragment.prompt_file),
-                max_gleanings=max_gleanings,
-                encoding_model=reader.str(Fragment.encoding_model),
+                max_gleanings=reader.int(Fragment.max_gleanings)
+                or defs.CLAIM_MAX_GLEANINGS,
             )
 
         community_report_config = values.get("community_reports") or {}
         with (
-            reader.envvar_prefix(Section.community_reports),
+            reader.envvar_prefix(Section.community_report),
             reader.use(community_report_config),
         ):
             community_reports_model = CommunityReportsConfig(
@@ -510,10 +479,6 @@ def create_graphrag_config(
                 or defs.LOCAL_SEARCH_TOP_K_MAPPED_ENTITIES,
                 top_k_relationships=reader.int("top_k_relationships")
                 or defs.LOCAL_SEARCH_TOP_K_RELATIONSHIPS,
-                temperature=reader.float("llm_temperature")
-                or defs.LOCAL_SEARCH_LLM_TEMPERATURE,
-                top_p=reader.float("llm_top_p") or defs.LOCAL_SEARCH_LLM_TOP_P,
-                n=reader.int("llm_n") or defs.LOCAL_SEARCH_LLM_N,
                 max_tokens=reader.int(Fragment.max_tokens)
                 or defs.LOCAL_SEARCH_MAX_TOKENS,
                 llm_max_tokens=reader.int("llm_max_tokens")
@@ -525,10 +490,8 @@ def create_graphrag_config(
             reader.envvar_prefix(Section.global_search),
         ):
             global_search_model = GlobalSearchConfig(
-                temperature=reader.float("llm_temperature")
-                or defs.GLOBAL_SEARCH_LLM_TEMPERATURE,
-                top_p=reader.float("llm_top_p") or defs.GLOBAL_SEARCH_LLM_TOP_P,
-                n=reader.int("llm_n") or defs.GLOBAL_SEARCH_LLM_N,
+                temperature=reader.float(Fragment.temperature) or defs.LLM_TEMPERATURE,
+                top_p=reader.float(Fragment.top_p) or defs.LLM_TOP_P,
                 max_tokens=reader.int(Fragment.max_tokens)
                 or defs.GLOBAL_SEARCH_MAX_TOKENS,
                 data_max_tokens=reader.int("data_max_tokens")
@@ -596,7 +559,6 @@ class Fragment(str, Enum):
     max_tokens = "MAX_TOKENS"
     temperature = "TEMPERATURE"
     top_p = "TOP_P"
-    n = "N"
     model = "MODEL"
     model_supports_json = "MODEL_SUPPORTS_JSON"
     prompt_file = "PROMPT_FILE"
@@ -617,7 +579,7 @@ class Section(str, Enum):
     cache = "CACHE"
     chunk = "CHUNK"
     claim_extraction = "CLAIM_EXTRACTION"
-    community_reports = "COMMUNITY_REPORTS"
+    community_report = "COMMUNITY_REPORT"
     embedding = "EMBEDDING"
     entity_extraction = "ENTITY_EXTRACTION"
     graphrag = "GRAPHRAG"

@@ -21,8 +21,8 @@ class FileWorkflowCallbacks(NoopWorkflowCallbacks):
     def __init__(self, directory: str):
         """Create a new file-based workflow reporter."""
         Path(directory).mkdir(parents=True, exist_ok=True)
-        self._out_stream = open(  # noqa: PTH123, SIM115
-            Path(directory) / "logs.json", "a", encoding="utf-8", errors="strict"
+        self._out_stream = open(  # noqa SIM115
+            Path(directory) / "logs.json", "a", encoding="utf-8"
         )
 
     def on_error(
@@ -34,16 +34,13 @@ class FileWorkflowCallbacks(NoopWorkflowCallbacks):
     ):
         """Handle when an error occurs."""
         self._out_stream.write(
-            json.dumps(
-                {
-                    "type": "error",
-                    "data": message,
-                    "stack": stack,
-                    "source": str(cause),
-                    "details": details,
-                },
-                ensure_ascii=False,
-            )
+            json.dumps({
+                "type": "error",
+                "data": message,
+                "stack": stack,
+                "source": str(cause),
+                "details": details,
+            })
             + "\n"
         )
         message = f"{message} details={details}"
@@ -52,21 +49,14 @@ class FileWorkflowCallbacks(NoopWorkflowCallbacks):
     def on_warning(self, message: str, details: dict | None = None):
         """Handle when a warning occurs."""
         self._out_stream.write(
-            json.dumps(
-                {"type": "warning", "data": message, "details": details},
-                ensure_ascii=False,
-            )
-            + "\n"
+            json.dumps({"type": "warning", "data": message, "details": details}) + "\n"
         )
         _print_warning(message)
 
     def on_log(self, message: str, details: dict | None = None):
         """Handle when a log message is produced."""
         self._out_stream.write(
-            json.dumps(
-                {"type": "log", "data": message, "details": details}, ensure_ascii=False
-            )
-            + "\n"
+            json.dumps({"type": "log", "data": message, "details": details}) + "\n"
         )
 
         message = f"{message} details={details}"

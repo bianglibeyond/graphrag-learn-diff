@@ -128,15 +128,7 @@ class OpenAI(OpenAILLMImpl):
             while True:
                 try:
                     chunk = response.__next__()  # type: ignore
-                    if not chunk or not chunk.choices:
-                        continue
-
-                    delta = (
-                        chunk.choices[0].delta.content
-                        if chunk.choices[0].delta and chunk.choices[0].delta.content
-                        else ""
-                    )  # type: ignore
-
+                    delta = chunk.choices[0].delta.content or ""  # type: ignore
                     full_response += delta
                     if callbacks:
                         for callback in callbacks:
@@ -166,15 +158,7 @@ class OpenAI(OpenAILLMImpl):
             while True:
                 try:
                     chunk = await response.__anext__()  # type: ignore
-                    if not chunk or not chunk.choices:
-                        continue
-
-                    delta = (
-                        chunk.choices[0].delta.content
-                        if chunk.choices[0].delta and chunk.choices[0].delta.content
-                        else ""
-                    )  # type: ignore
-
+                    delta = chunk.choices[0].delta.content or ""  # type: ignore
                     full_response += delta
                     if callbacks:
                         for callback in callbacks:

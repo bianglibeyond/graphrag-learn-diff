@@ -4,7 +4,6 @@
 """Cache key generation utils."""
 
 import hashlib
-import json
 
 
 def _llm_string(params: dict) -> str:
@@ -20,9 +19,7 @@ def _hash(_input: str) -> str:
     return hashlib.md5(_input.encode()).hexdigest()  # noqa S324
 
 
-def create_hash_key(
-    operation: str, prompt: str, parameters: dict, history: list[dict] | None
-) -> str:
+def create_hash_key(operation: str, prompt: str, parameters: dict) -> str:
     """Compute cache key from prompt and associated model and settings.
 
     Args:
@@ -34,10 +31,4 @@ def create_hash_key(
         str: The cache key.
     """
     llm_string = _llm_string(parameters)
-    history_string = _hash(json.dumps(history)) if history else None
-    hash_string = (
-        _hash(prompt + llm_string + history_string)
-        if history_string
-        else _hash(prompt + llm_string)
-    )
-    return f"{operation}-{hash_string}"
+    return f"{operation}-{_hash(prompt + llm_string)}"

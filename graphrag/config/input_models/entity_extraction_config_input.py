@@ -15,4 +15,3 @@ class EntityExtractionConfigInput(LLMConfigInput):
     entity_types: NotRequired[list[str] | str | None]
     max_gleanings: NotRequired[int | str | None]
     strategy: NotRequired[dict | None]
-    encoding_model: NotRequired[str | None]

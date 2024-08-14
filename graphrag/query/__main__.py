@@ -23,17 +23,7 @@ class SearchType(Enum):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="python -m graphrag.query",
-        description="The graphrag query engine",
-    )
-
-    parser.add_argument(
-        "--config",
-        help="The configuration yaml file to use when running the query",
-        required=False,
-        type=str,
-    )
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--data",
@@ -52,7 +42,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--method",
-        help="The method to run",
+        help="The method to run, one of: local or global",
         required=True,
         type=SearchType,
         choices=list(SearchType),
@@ -60,14 +50,14 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--community_level",
-        help="Community level in the Leiden community hierarchy from which we will load the community reports higher value means we use reports on smaller communities. Default: 2",
+        help="Community level in the Leiden community hierarchy from which we will load the community reports higher value means we use reports on smaller communities",
         type=int,
         default=2,
     )
 
     parser.add_argument(
         "--response_type",
-        help="Free form text describing the response type and format, can be anything, e.g. Multiple Paragraphs, Single Paragraph, Single Sentence, List of 3-7 Points, Single Page, Multi-Page Report. Default: Multiple Paragraphs",
+        help="Free form text describing the response type and format, can be anything, e.g. Multiple Paragraphs, Single Paragraph, Single Sentence, List of 3-7 Points, Single Page, Multi-Page Report",
         type=str,
         default="Multiple Paragraphs",
     )
@@ -84,7 +74,6 @@ if __name__ == "__main__":
     match args.method:
         case SearchType.LOCAL:
             run_local_search(
-                args.config,
                 args.data,
                 args.root,
                 args.community_level,
@@ -93,7 +82,6 @@ if __name__ == "__main__":
             )
         case SearchType.GLOBAL:
             run_global_search(
-                args.config,
                 args.data,
                 args.root,
                 args.community_level,

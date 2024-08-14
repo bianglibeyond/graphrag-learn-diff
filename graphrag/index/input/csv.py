@@ -123,16 +123,9 @@ async def load(
         msg = f"No CSV files found in {config.base_dir}"
         raise ValueError(msg)
 
-    files_loaded = []
-
-    for file, group in files:
-        try:
-            files_loaded.append(await load_file(file, group))
-        except Exception:  # noqa: BLE001 (catching Exception is fine here)
-            log.warning("Warning! Error loading csv file %s. Skipping...", file)
-
-    log.info("Found %d csv files, loading %d", len(files), len(files_loaded))
-    result = pd.concat(files_loaded)
+    files = [await load_file(file, group) for file, group in files]
+    log.info("loading %d csv files", len(files))
+    result = pd.concat(files)
     total_files_log = f"Total number of unfiltered csv rows: {len(result)}"
     log.info(total_files_log)
     return result

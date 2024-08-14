@@ -3,12 +3,9 @@
 
 """Utilities for working with tokens."""
 
-import logging
-
 import tiktoken
 
 DEFAULT_ENCODING_NAME = "cl100k_base"
-log = logging.getLogger(__name__)
 
 
 def num_tokens_from_string(
@@ -16,12 +13,7 @@ def num_tokens_from_string(
 ) -> int:
     """Return the number of tokens in a text string."""
     if model is not None:
-        try:
-            encoding = tiktoken.encoding_for_model(model)
-        except KeyError:
-            msg = f"Failed to get encoding for {model} when getting num_tokens_from_string. Fall back to default encoding {DEFAULT_ENCODING_NAME}"
-            log.warning(msg)
-            encoding = tiktoken.get_encoding(DEFAULT_ENCODING_NAME)
+        encoding = tiktoken.encoding_for_model(model)
     else:
         encoding = tiktoken.get_encoding(encoding_name or DEFAULT_ENCODING_NAME)
     return len(encoding.encode(string))
